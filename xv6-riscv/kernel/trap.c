@@ -3,9 +3,12 @@
 #include "memlayout.h"
 #include "riscv.h"
 #include "spinlock.h"
+#include "sleeplock.h"
 #include "proc.h"
 #include "defs.h"
 #include "vma.h"
+#include "fs.h"
+#include "file.h"
 
 struct spinlock tickslock;
 uint ticks;
@@ -85,7 +88,7 @@ usertrap(void)
     printf("DIRECCION DE FALLO %p\n", f_vaddr);
     printf("DIRECCION 1 %p\n", act->addri);
 
-    for(i = 0; i<p->nvma; i++){ //See if the address fits in any vma    TRATAR FALLOS DE PAGINA QUE NO SEAN DE LA VMA
+    for(i = 0; i<p->nvma; i++){ //Watch if the address fits in any vma  TRATAR FALLOS DE PAGINA QUE NO SEAN DE LA VMA
       if(f_vaddr >= act->addri && f_vaddr < act->addri+act->size) break;
       act = act->next;
     }
@@ -113,6 +116,11 @@ usertrap(void)
       p->killed = 1;
       exit(-1);
     }
+
+    ilock(act->ofile->ip);
+    readi(act->ofile->ip, 1, PGROUNDDOWN(f_vaddr), PGROUNDDOWN(f_vaddr)-act->addri, PGSIZE);
+    iunlock(act->ofile->ip);
+
     
   }else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);

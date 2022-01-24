@@ -14,9 +14,6 @@
 #include "proc.h"
 #include "vma.h"
 
-#define VMAS_STORED 30
-
-
 struct vma vmas[VMAS_STORED];
 struct spinlock vmaslock; //Lock to modify global vma array
 
