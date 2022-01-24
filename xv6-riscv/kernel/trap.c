@@ -104,7 +104,7 @@ usertrap(void)
 
     if(paddr == 0) p->killed = 1;
 
-    memset(paddr, 0, PGSIZE); //Set all page to 0
+    memset(paddr, 0, PGSIZE); //Set all page content to 0
 
     printf("Dirección de memoria dada %p\n", paddr);
 
