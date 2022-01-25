@@ -40,7 +40,7 @@ _v1(char *p)
   int i;
   for (i = 0; i < PGSIZE*2; i++) {
     if (i < PGSIZE + (PGSIZE/2)) {
-      printf("BEFORE TAhT\n");
+      //printf("BEFORE TAhT\n");
       if (p[i] != 'A') {
         printf("mismatch at %d, wanted 'A', got 0x%x\n", i, p[i]);
         err("v1 mismatch (1)");
@@ -115,6 +115,7 @@ mmap_test(void)
   if (p == MAP_FAILED)
     err("mmap (1)");
   _v1(p);
+  printf("Fail\n");
   if (munmap(p, PGSIZE*2) == -1)
     err("munmap (1)");
 

@@ -74,7 +74,6 @@ usertrap(void)
 
   }else if(r_scause() == 12 || r_scause() == 13 || r_scause() == 15){
     
-    printf("FALLO DE PAGINA\n"); 
     int i = 0;
 
     if(p->nvma == 0){
