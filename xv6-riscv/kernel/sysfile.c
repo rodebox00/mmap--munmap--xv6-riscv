@@ -500,8 +500,6 @@ sys_mmap(void)
   if(argaddr(4, &fd) < 0)
     return -1;
 
-  if(length < 1)  //Map at least 1 byte
-    return -1;
   if(prot != PROT_READ && prot != PROT_WRITE && prot != PROT_READ_WRITE)
     return -1;
   if(flag != MAP_PRIVATE && flag != MAP_SHARED)
@@ -517,5 +515,12 @@ sys_mmap(void)
 uint64
 sys_munmap(void)
 {
-  return 0;
+  uint64 length, addr;
+
+  if(argaddr(1, &addr) < 0) 
+    return -1;
+  if(argaddr(2, &length) < 0)
+    return -1;
+  
+  return munmap(addr, length);
 }

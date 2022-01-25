@@ -14,6 +14,7 @@
 #include "proc.h"
 #include "vma.h"
 
+
 struct vma vmas[VMAS_STORED];
 struct spinlock vmaslock; //Lock to modify global vma array
 
@@ -265,3 +266,28 @@ mmap(uint64 length, int prot, int flag, int fd){
     return n->addri; 
 }
 
+int
+munmap(uint64 addr, uint64 length){
+  
+  struct proc *p = myproc(); 
+
+  acquire(&p->lock);
+  struct vma *act = p->vmas;
+  struct vma *n = act->next;
+  int i;
+
+  for(i = 0; i<p->nvma; i++){
+    if(addr >= act->addri && addr <= act->addre) break;
+    act = n;
+    n = n->next;
+  }
+
+  if(i == p->nvma) return -1;
+
+  
+
+
+  uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
+
+  return 0;
+}

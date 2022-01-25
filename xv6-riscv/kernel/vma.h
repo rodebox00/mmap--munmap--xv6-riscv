@@ -4,7 +4,7 @@
 struct vma
 {
     int use;
-    unsigned int long size;     //Truly size of the information inside vma
+    unsigned int long size;     //True size of the information inside vma
     struct file *ofile;
     unsigned int long addri;    //Init address of the vma
     unsigned int long addre;    //End address of the vma
