@@ -84,31 +84,21 @@ usertrap(void)
     uint64 f_vaddr = (uint64) r_stval();
     struct vma *act = p->vmas;  
 
-    printf("DIRECCION DE FALLO %p\n", f_vaddr);
-    printf("DIRECCION 1 %p\n", act->addri);
-
     for(i = 0; i<p->nvma; i++){ //Watch if the address fits in any vma  TRATAR FALLOS DE PAGINA QUE NO SEAN DE LA VMA
       if(f_vaddr >= act->addri && f_vaddr < act->addri+act->size) break;
       act = act->next;
     }
-
-    printf("DIRECCION DE FALLO %p\n", f_vaddr);
 
     if(i == p->nvma){
       p->killed = 1;
       exit(-1);
     } 
     
-
-    printf("1\n");
-
     char *paddr = kalloc();    
 
     if(paddr == 0) p->killed = 1;
 
     memset(paddr, 0, PGSIZE); //Set all page content to 0
-
-    printf("Dirección de memoria dada %p\n", paddr);
 
     if(mappages(p->pagetable, f_vaddr, PGSIZE, (uint64)paddr, act->prot | PTE_U) != 0){
       kfree(paddr);

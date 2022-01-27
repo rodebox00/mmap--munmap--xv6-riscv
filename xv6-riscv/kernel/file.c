@@ -190,7 +190,7 @@ filewrite(struct file *f, uint64 addr, int n)
 }
 
 uint64
-mmap(uint64 length, int prot, int flag, int fd){
+mmap(void *addr, uint64 length, int prot, int flag, int fd){
 
   struct proc *p = myproc(); 
   int i;
@@ -216,7 +216,7 @@ mmap(uint64 length, int prot, int flag, int fd){
     }
   }
 
-  psize = PGROUNDUP(length);
+  psize = PGROUNDUP(length-1);
   act = p->vmas;
   prev = 0;
   n = 0;
@@ -268,17 +268,24 @@ mmap(uint64 length, int prot, int flag, int fd){
     p->nvma++;
  
     release(&p->lock);
+
+    printf("Devuekvo %p\n", n->addri);
     return n->addri; 
 }
 
 int
 munmap(uint64 addr, uint64 length){
 
+  printf("ENTRA\n");
   struct proc *p = myproc(); 
+
+  //addr = 0x0000002000000000;
 
   acquire(&p->lock);
   struct vma *act = p->vmas;
   int i;
+  
+  printf("1\n");
 
   //Function to release a vma
   void freeVma(){
@@ -287,20 +294,27 @@ munmap(uint64 addr, uint64 length){
     act->size = 0;  
     act->ofile = 0;
     act->addrinit = 0;
-    act->addri = 0;   
+    act->addri = 0;
     act->addre = 0;   
     act->offset = 0;
     act->next = 0;
     act->prot = 0;
     act->flag = 0;
+    p->nvma--;
+    //Desvincular de la lista de VMAs
     release(&vmaslock);
   }
 
+  printf("2\n");
+
   //Check if the address is contained in a vma
   for(i = 0; i<p->nvma; i++){
-    if(addr+length >= act->addri && addr+length < act->addre) break;
+    printf("%p %p %p\n", addr+length, act->addri, act->addre);
+    if(addr+length-1 >= act->addri && addr+length-1 < act->addre) break;
     act = act->next;
   }
+
+  //printf("%p %d\n", addr, length);
 
   if(i == p->nvma){
     release(&p->lock);
@@ -309,11 +323,16 @@ munmap(uint64 addr, uint64 length){
 
   pte_t *pte;
   
+  printf("3\n");
+
   //Whether flag MAP_SHARED was established, check if the page has the dirty bit and if it has write in disk
   if(act->flag == MAP_SHARED){
-    for(i = 0; i < PGROUNDUP(length)/PGSIZE; i++){
+    printf("4\n");
+    for(i = 0; i < PGROUNDUP(length-1)/PGSIZE; i++){
+      printf("5\n");
       pte =  walk(p->pagetable, PGROUNDDOWN(addr+i*PGSIZE), 0);
       if(CHECK_BIT(*pte, 7)){
+        printf("6\n");
         ilock(act->ofile->ip);
         if(writei(act->ofile->ip, 1, PGROUNDDOWN(addr), PGROUNDDOWN(addr)-act->addrinit, PGSIZE) == -1){
           iunlock(act->ofile->ip);  
@@ -324,13 +343,13 @@ munmap(uint64 addr, uint64 length){
       }
     }
 }
+  printf("8\n");
+  uvmunmap(p->pagetable, PGROUNDDOWN(addr), PGROUNDUP(length-1)/PGSIZE, 1);
 
-  uvmunmap(p->pagetable, PGROUNDDOWN(addr), PGROUNDUP(length)/PGSIZE, 1);
-
-  if(act->addri+PGROUNDUP(length) == act->addre){
-    act->ofile->ref--;
+  if(act->addri+PGROUNDUP(length-1) == act->addre){
+    act->ofile->ref--;  //Reduce references to file 
     freeVma();
-  }else act->addri = act->addri+PGROUNDUP(length);  //Set the new init address of the vma
+  }else act->addri = act->addri+PGROUNDUP(length-1);  //Set the new init address of the vma
 
   release(&p->lock);
   return 0;

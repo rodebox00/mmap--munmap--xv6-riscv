@@ -507,8 +507,7 @@ sys_mmap(void)
   if(fd < 0 || fd >= NOFILE)
     return -1;
 
-  printf("Continua\n");
-  return mmap(length, prot, flag, fd);
+  return mmap(0, length, prot, flag, fd);
 }
 
 
@@ -517,10 +516,10 @@ sys_munmap(void)
 {
   uint64 length, addr;
 
-  if(argaddr(1, &addr) < 0) 
+  if(argaddr(0, &addr) < 0) 
     return -1;
-  if(argaddr(2, &length) < 0)
+  if(argaddr(1, &length) < 0)
     return -1;
-  
+
   return munmap(addr, length);
 }
