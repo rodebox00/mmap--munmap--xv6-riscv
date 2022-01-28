@@ -1,5 +1,9 @@
-#define START_ADDRESS 0x2000000000  //First address of the process memory area where a vma is created
-#define TOP_ADDRESS 0x3FFFFFDFFF //Maximum address of the process where a vma can fit
+//First address of the process memory area where a vma is created
+#define START_ADDRESS 0x2000000000  
+
+//Maximum address of the process where a vma can fit
+#define TOP_ADDRESS 0x3FFFFFDFFF 
+
 
 struct vma
 {

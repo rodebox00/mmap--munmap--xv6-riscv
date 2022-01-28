@@ -189,10 +189,19 @@ filewrite(struct file *f, uint64 addr, int n)
   return ret;
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
 uint64
 mmap(void *addr, uint64 length, int prot, int flag, int fd){
 
-  struct proc *p = myproc(); 
+  struct proc *p = myproc();
+
+  //Check if it is a private map or not and it has the correct permissions
+  if(flag == MAP_SHARED){
+    
+  }else if(flag != MAP_SHARED && flag != MAP_PRIVATE) return 0xffffffffffffffff;
+
   int i;
   struct vma *n, *act, *prev;
   uint64 psize;  //Real size of the vma based on page size
@@ -221,35 +230,43 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
   prev = 0;
   n = 0;
 
+  printf("ENTRA\n");
+
   for(i= 0; i<=MAX_VMAS; i++){
     if(act == 0){
-      if(((prev != 0) && (prev->addre + psize) >= TOP_ADDRESS) || ((prev == 0) && START_ADDRESS + psize >= TOP_ADDRESS)) return 0xffffffffffffffff; //The vma can not be allocated
+      printf("1\n");
+      if(((prev != 0) && (prev->addre + psize) >= TOP_ADDRESS) || ((prev == 0) && START_ADDRESS + psize >= TOP_ADDRESS)){
+        printf("1\n");
+        return 0xffffffffffffffff; //The vma can not be allocated
+      }
       n = &vmas[i];
-
+      printf("1\n");
       if(prev == 0){
         n->addri = START_ADDRESS;
-        n->addre = START_ADDRESS + psize;
+        n->addre = START_ADDRESS + psize + 1;
       }else{
         prev->next = n;
         n->addri = prev->addre;
-        n->addre = prev->addre + psize; 
+        n->addre = prev->addre + psize + 1; 
       }
       n->next = 0;
       goto allocated; 
 
-    }else if(prev->addre + psize < act->addri){
+    }else if((prev != 0) && prev->addre + psize < act->addri){ //A new vma can fit between two
+      printf("1\n");
       n = &vmas[i];
       prev->next = n;
       n->next = act;
       n->addri = prev->addre;
-      n->addre = prev->addre + psize;
+      n->addre = prev->addre + psize + 1;
       goto allocated; 
+    }
 
-    } 
+    printf("1\n"); 
     prev = act;
     act = act->next;
   }
-
+  printf("1\n");
   return 0xffffffffffffffff; //The vma can not be allocated
 
   allocated:
@@ -272,17 +289,19 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
     printf("Devuekvo %p\n", n->addri);
     return n->addri; 
 }
+#pragma GCC pop_options
+
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 
 int
 munmap(uint64 addr, uint64 length){
 
-  printf("ENTRA\n");
   struct proc *p = myproc(); 
-
-  //addr = 0x0000002000000000;
 
   acquire(&p->lock);
   struct vma *act = p->vmas;
+  struct vma *prev = 0;
   int i;
   
   printf("1\n");
@@ -290,6 +309,13 @@ munmap(uint64 addr, uint64 length){
   //Function to release a vma
   void freeVma(){
     acquire(&vmaslock);
+
+    //Organize the linked list of vmas
+    if(prev == 0){
+      if(act->next == 0) p->vmas = 0;
+      else p->vmas = act->next;
+    }else if(act->next != 0) prev->next = act->next;
+
     act->use = 0;
     act->size = 0;  
     act->ofile = 0;
@@ -301,7 +327,6 @@ munmap(uint64 addr, uint64 length){
     act->prot = 0;
     act->flag = 0;
     p->nvma--;
-    //Desvincular de la lista de VMAs
     release(&vmaslock);
   }
 
@@ -311,6 +336,7 @@ munmap(uint64 addr, uint64 length){
   for(i = 0; i<p->nvma; i++){
     printf("%p %p %p\n", addr+length, act->addri, act->addre);
     if(addr+length-1 >= act->addri && addr+length-1 < act->addre) break;
+    prev = act;
     act = act->next;
   }
 
@@ -346,7 +372,9 @@ munmap(uint64 addr, uint64 length){
   printf("8\n");
   uvmunmap(p->pagetable, PGROUNDDOWN(addr), PGROUNDUP(length-1)/PGSIZE, 1);
 
-  if(act->addri+PGROUNDUP(length-1) == act->addre){
+  printf("%d\n", PGROUNDUP(length));
+
+  if(act->addri+PGROUNDUP(length-1) + 1 == act->addre){
     act->ofile->ref--;  //Reduce references to file 
     freeVma();
   }else act->addri = act->addri+PGROUNDUP(length-1);  //Set the new init address of the vma
@@ -354,3 +382,5 @@ munmap(uint64 addr, uint64 length){
   release(&p->lock);
   return 0;
 }
+
+#pragma GCC pop_options

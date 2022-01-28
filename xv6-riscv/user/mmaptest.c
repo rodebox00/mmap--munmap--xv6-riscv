@@ -17,7 +17,7 @@ int
 main(int argc, char *argv[])
 {
   mmap_test();
-  fork_test();
+  //fork_test();
   printf("mmaptest: all tests succeeded\n");
   exit(0);
 }
@@ -118,7 +118,8 @@ mmap_test(void)
   printf("Continue %p\n", p);
   if (munmap(p, PGSIZE*2) == -1)
     err("munmap (1)");
-
+  
+  printf("Sigue");
   // should be able to map file opened read-only with private writable
   // mapping
   p = mmap(0, PGSIZE*2, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
@@ -126,6 +127,7 @@ mmap_test(void)
     err("mmap (2)");
   if (close(fd) == -1)
     err("close");
+  printf("YYYY\n");
   _v1(p);
   for (i = 0; i < PGSIZE*2; i++)
     p[i] = 'Z';
@@ -137,6 +139,7 @@ mmap_test(void)
   if ((fd = open(f, O_RDONLY)) == -1)
     err("open");
   p = mmap(0, PGSIZE*3, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  printf("lo que me devuelve %p\n", p);
   if (p != MAP_FAILED)
     err("mmap call should have failed");
   if (close(fd) == -1)
