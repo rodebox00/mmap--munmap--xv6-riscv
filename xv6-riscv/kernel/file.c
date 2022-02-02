@@ -198,9 +198,8 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
   struct proc *p = myproc();
 
   //Check if it is a private map or not and it has the correct permissions
-  if(flag == MAP_SHARED){
-    //Check permissions of the file descriptor
-  }else if(flag != MAP_SHARED && flag != MAP_PRIVATE) return 0xffffffffffffffff;
+  if((flag == MAP_SHARED && (p->ofile[fd]->readable != 1 || p->ofile[fd]->writable != 1)) || (flag != MAP_SHARED && flag != MAP_PRIVATE)) 
+    return 0xffffffffffffffff;
 
   int i;
   struct vma *n, *act, *prev;
