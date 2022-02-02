@@ -12,7 +12,7 @@ struct vma
     struct file *ofile;
     unsigned int long addrinit;    //Initial init address (included)
     unsigned int long addri;    //Actual init address (included)
-    unsigned int long addre;    //Actual final address (not included)
+    unsigned int long addre;    //Actual final address (not included in the vma)
     unsigned int long offset;
     struct vma *next;
     int prot;

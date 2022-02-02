@@ -199,7 +199,7 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
 
   //Check if it is a private map or not and it has the correct permissions
   if(flag == MAP_SHARED){
-    
+    //Check permissions of the file descriptor
   }else if(flag != MAP_SHARED && flag != MAP_PRIVATE) return 0xffffffffffffffff;
 
   int i;
@@ -215,6 +215,9 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
 
   acquire(&vmaslock);
 
+  //Check if the addr is already in a vma 
+  //-----------------------------------------------------------------------
+
   //Search for a free vma in the global vma array
   for(i = 0; i < VMAS_STORED; i++){
     if(vmas[i].use == 0) break;
@@ -225,7 +228,7 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
     }
   }
 
-  psize = PGROUNDUP(length-1);
+  psize = PGROUNDUP(length);
   act = p->vmas;
   prev = 0;
   n = 0;
@@ -234,31 +237,28 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
 
   for(i= 0; i<=MAX_VMAS; i++){
     if(act == 0){
-      printf("1\n");
-      if(((prev != 0) && (prev->addre + psize) >= TOP_ADDRESS) || ((prev == 0) && START_ADDRESS + psize >= TOP_ADDRESS)){
-        printf("1\n");
-        return 0xffffffffffffffff; //The vma can not be allocated
-      }
+      if(((prev != 0) && (prev->addre + psize) > TOP_ADDRESS) || ((prev == 0) && START_ADDRESS + psize > TOP_ADDRESS)) return 0xffffffffffffffff; //The vma can not be allocated
+      
       n = &vmas[i];
       printf("1\n");
       if(prev == 0){
         n->addri = START_ADDRESS;
-        n->addre = START_ADDRESS + psize + 1;
+        n->addre = START_ADDRESS + psize;
       }else{
         prev->next = n;
         n->addri = prev->addre;
-        n->addre = prev->addre + psize + 1; 
+        n->addre = prev->addre + psize; 
       }
       n->next = 0;
       goto allocated; 
 
-    }else if((prev != 0) && prev->addre + psize < act->addri){ //A new vma can fit between two
+    }else if((prev != 0) && prev->addre + psize <= act->addri){ //A new vma can fit between two
       printf("1\n");
       n = &vmas[i];
       prev->next = n;
       n->next = act;
       n->addri = prev->addre;
-      n->addre = prev->addre + psize + 1;
+      n->addre = prev->addre + psize;
       goto allocated; 
     }
 
@@ -335,7 +335,7 @@ munmap(uint64 addr, uint64 length){
   //Check if the address is contained in a vma
   for(i = 0; i<p->nvma; i++){
     printf("%p %p %p\n", addr+length, act->addri, act->addre);
-    if(addr+length-1 >= act->addri && addr+length-1 < act->addre) break;
+    if(addr+length >= act->addri && addr+length <= act->addre) break;
     prev = act;
     act = act->next;
   }
@@ -351,10 +351,10 @@ munmap(uint64 addr, uint64 length){
   
   printf("3\n");
 
-  //Whether flag MAP_SHARED was established, check if the page has the dirty bit and if it has write in disk
+  //Whether flag MAP_SHARED was established, check if the page has the dirty bit and if it has write on disk
   if(act->flag == MAP_SHARED){
     printf("4\n");
-    for(i = 0; i < PGROUNDUP(length-1)/PGSIZE; i++){
+    for(i = 0; i < PGROUNDUP(length)/PGSIZE; i++){
       printf("5\n");
       pte =  walk(p->pagetable, PGROUNDDOWN(addr+i*PGSIZE), 0);
       if(CHECK_BIT(*pte, 7)){
@@ -370,14 +370,14 @@ munmap(uint64 addr, uint64 length){
     }
 }
   printf("8\n");
-  uvmunmap(p->pagetable, PGROUNDDOWN(addr), PGROUNDUP(length-1)/PGSIZE, 1);
+  uvmunmap(p->pagetable, PGROUNDDOWN(addr), PGROUNDUP(length)/PGSIZE, 1);
 
   printf("%d\n", PGROUNDUP(length));
 
-  if(act->addri+PGROUNDUP(length-1) + 1 == act->addre){
+  if(act->addri+PGROUNDUP(length) == act->addre){
     act->ofile->ref--;  //Reduce references to file 
     freeVma();
-  }else act->addri = act->addri+PGROUNDUP(length-1);  //Set the new init address of the vma
+  }else act->addri = act->addri+PGROUNDUP(length)-1;  //Set the new init address of the vma
 
   release(&p->lock);
   return 0;
