@@ -215,9 +215,6 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
 
   acquire(&vmaslock);
 
-  //Check if the addr is already in a vma 
-  //-----------------------------------------------------------------------
-
   //Search for a free vma in the global vma array
   for(i = 0; i < VMAS_STORED; i++){
     if(vmas[i].use == 0) break;
@@ -372,12 +369,17 @@ munmap(uint64 addr, uint64 length){
   printf("8\n");
   uvmunmap(p->pagetable, PGROUNDDOWN(addr), PGROUNDUP(length)/PGSIZE, 1);
 
+  printf("MUESTRA                %d %p %p\n", PGROUNDDOWN(4096), act->addri, act->addre);
+
   printf("%d\n", PGROUNDUP(length));
 
   if(act->addri+PGROUNDUP(length) == act->addre){
     act->ofile->ref--;  //Reduce references to file 
     freeVma();
-  }else act->addri = act->addri+PGROUNDUP(length)-1;  //Set the new init address of the vma
+  }else if(act->addri == addr){ //Set the new init address when munmap is at the beginning
+    act->size = act->size - PGROUNDUP(length);
+    act->addri = act->addri+PGROUNDUP(length)-1;  
+  }else act->addre = PGROUNDDOWN(addr) - 1; //Set the new end address when munmap is at the end
 
   release(&p->lock);
   return 0;
