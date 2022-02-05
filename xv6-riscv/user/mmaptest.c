@@ -119,7 +119,6 @@ mmap_test(void)
   if (munmap(p, PGSIZE*2) == -1)
     err("munmap (1)");
   
-  printf("Sigue");
   // should be able to map file opened read-only with private writable
   // mapping
   p = mmap(0, PGSIZE*2, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
@@ -155,7 +154,7 @@ mmap_test(void)
   if (close(fd) == -1)
     err("close");
 
-  printf("LLEGAA------------\n");
+  
   // check that the mapping still works after close(fd).
   _v1(p);
 
@@ -175,16 +174,22 @@ mmap_test(void)
     char b;
     if (read(fd, &b, 1) != 1)
       err("read (1)");
-    if (b != 'Z')
+    if (b != 'Z'){
       err("file does not contain modifications");
+    }
   }
+
   if (close(fd) == -1)
     err("close");
+
+  printf("Continuaaaa\n");
 
   // unmap the rest of the mapped memory.
   if (munmap(p+PGSIZE*2, PGSIZE) == -1)
     err("munmap (4)");
 
+  printf("Sigue 2\n");
+  
   //
   // mmap two files at the same time.
   //

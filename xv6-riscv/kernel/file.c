@@ -229,8 +229,6 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
   prev = 0;
   n = 0;
 
-  printf("ENTRA\n");
-
   for(i= 0; i<=MAX_VMAS; i++){
     if(act == 0){
       if(((prev != 0) && (prev->addre + psize) > TOP_ADDRESS) || ((prev == 0) && START_ADDRESS + psize > TOP_ADDRESS)) return 0xffffffffffffffff; //The vma can not be allocated
@@ -312,6 +310,7 @@ munmap(uint64 addr, uint64 length){
       else p->vmas = act->next;
     }else if(act->next != 0) prev->next = act->next;
 
+    act->ofile->ref--;  //Reduce references to file 
     act->use = 0;
     act->size = 0;  
     act->ofile = 0;
@@ -344,36 +343,61 @@ munmap(uint64 addr, uint64 length){
   }
 
   pte_t *pte;
-  
-  printf("3\n");
+  int sizeWritten;
+  int out = 0;
 
-  //Whether flag MAP_SHARED was established, check if the page has the dirty bit and if it has write on disk
-  if(act->flag == MAP_SHARED){
-    printf("4\n");
-    for(i = 0; i < PGROUNDUP(length)/PGSIZE; i++){
-      printf("5\n");
-      pte =  walk(p->pagetable, PGROUNDDOWN(addr+i*PGSIZE), 0);
-      if(CHECK_BIT(*pte, 7)){
-        printf("6\n");
+  for(i = 0; i < PGROUNDUP(length)/PGSIZE; i++){
+    pte =  walk(p->pagetable, PGROUNDDOWN(addr+i*PGSIZE), 0);
+    
+    //Check if the page is mapped
+    if(*pte & PTE_V){
+    printf("Lo que me devuelve walk %p\n", pte);
+
+    //Whether flag MAP_SHARED was established, check if the page has the dirty bit and if it has write on disk
+      if((*pte & PTE_D) && act->flag == MAP_SHARED){
+
         ilock(act->ofile->ip);
-        if(writei(act->ofile->ip, 1, PGROUNDDOWN(addr), PGROUNDDOWN(addr)-act->addrinit, PGSIZE) == -1){
+        printf("%p %p %d\n", PGROUNDDOWN(addr+i*PGSIZE), PGROUNDDOWN(addr+i*PGSIZE)-act->addrinit, PGSIZE);
+        //printf("TAMAÑO %d %d\n",act->ofile->ip->size, PGROUNDDOWN(addr+i*PGSIZE)-act->addrinit);
+
+        printf("Valor de i %d\n", i);
+        printf("Lo que queda %d\n", PGSIZE*(i+1) - act->ofile->ip->size);
+        printf("Tamaños 1 %d %d\n", act->ofile->ip->size, PGSIZE*(i+1));
+
+        sizeWritten = PGSIZE*(i+1) - act->ofile->ip->size;
+
+        printf("RESTA %d \n", sizeWritten);
+
+        //Set the correct data size to write on disk
+        if(sizeWritten > 0){
+          printf("TAMAÑO a escribir %d\n", sizeWritten); 
+          out = 1;
+        }else sizeWritten = PGSIZE;
+
+        //Write on disk the modified data
+        if(writei(act->ofile->ip, 1, PGROUNDDOWN(addr+i*PGSIZE), PGROUNDDOWN(addr+i*PGSIZE)-act->addrinit, sizeWritten) == -1){
           iunlock(act->ofile->ip);  
           release(&p->lock);
           return -1;
         }
+
         iunlock(act->ofile->ip);
       }
+
+      printf("Pagina a desmapear %p %d\n", PGROUNDDOWN(addr+i*PGSIZE), (*pte & PTE_V));
+      uvmunmap(p->pagetable, PGROUNDDOWN(addr+i*PGSIZE), 1, 1);
+      if(out) break;
     }
-}
-  printf("8\n");
-  uvmunmap(p->pagetable, PGROUNDDOWN(addr), PGROUNDUP(length)/PGSIZE, 1);
+  }
+
+  /*printf("Paginas a desmapear %d %d y direccion\n", PGROUNDUP(length)/PGSIZE, length, addr);
+  uvmunmap(p->pagetable, PGROUNDDOWN(addr), PGROUNDUP(length)/PGSIZE, 1);*/
 
   printf("MUESTRA                %d %p %p\n", PGROUNDDOWN(4096), act->addri, act->addre);
 
   printf("%d\n", PGROUNDUP(length));
 
   if(act->addri+PGROUNDUP(length) == act->addre){
-    act->ofile->ref--;  //Reduce references to file 
     freeVma();
   }else if(act->addri == addr){ //Set the new init address when munmap is at the beginning
     act->size = act->size - PGROUNDUP(length);

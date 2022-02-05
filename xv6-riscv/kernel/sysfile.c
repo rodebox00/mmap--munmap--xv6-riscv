@@ -520,6 +520,9 @@ sys_munmap(void)
     return -1;
   if(argaddr(1, &length) < 0)
     return -1;
+  begin_op();
+  int e = munmap(addr, length);
+  end_op();
 
-  return munmap(addr, length);
+  return e;
 }

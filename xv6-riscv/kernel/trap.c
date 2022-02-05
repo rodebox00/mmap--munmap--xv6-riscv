@@ -72,7 +72,7 @@ usertrap(void)
   } else if((which_dev = devintr()) != 0){
     // ok
 
-  }else if(r_scause() == 12 || r_scause() == 13 || r_scause() == 15){
+  }else if(r_scause() == 12 || r_scause() == 13 || r_scause() == 15){ //Page fault
     
     int i = 0;
 
@@ -106,6 +106,8 @@ usertrap(void)
       exit(-1);
     }
 
+    printf("Se ha mapeado la direccion %p\n", f_vaddr);
+    
     ilock(act->ofile->ip);
     readi(act->ofile->ip, 1, PGROUNDDOWN(f_vaddr), PGROUNDDOWN(f_vaddr)-act->addri, PGSIZE);
     iunlock(act->ofile->ip);

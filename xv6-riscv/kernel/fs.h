@@ -4,9 +4,6 @@
 #define ROOTINO  1   // root i-number
 #define BSIZE 1024  // block size
 
-//Check bit of an address
-#define CHECK_BIT(x, i) ( ((x) && (1 << (i)) != 0 ) )
-
 // Disk layout:
 // [ boot block | super block | log | inode blocks |
 //                                          free bit map | data blocks]

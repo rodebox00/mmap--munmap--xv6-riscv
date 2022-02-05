@@ -501,6 +501,7 @@ writei(struct inode *ip, int user_src, uint64 src, uint off, uint n)
       brelse(bp);
       break;
     }
+    
     log_write(bp);
     brelse(bp);
   }
