@@ -199,10 +199,14 @@ mmap_test(void)
   if(write(fd1, "12345", 5) != 5)
     err("write mmap1");
   char *p1 = mmap(0, PGSIZE, PROT_READ, MAP_PRIVATE, fd1, 0);
+  printf("Me devuelve la dirección %p\n", p1);
   if(p1 == MAP_FAILED)
     err("mmap mmap1");
   close(fd1);
   unlink("mmap1");
+
+  //printf("%s %s\n", *p1, p1);
+  printf("Sigue 3\n");
 
   int fd2;
   if((fd2 = open("mmap2", O_RDWR|O_CREATE)) < 0)
@@ -215,11 +219,16 @@ mmap_test(void)
   close(fd2);
   unlink("mmap2");
 
+  printf("Sigue 4\n");
+  
+
   if(memcmp(p1, "12345", 5) != 0)
     err("mmap1 mismatch");
   if(memcmp(p2, "67890", 5) != 0)
     err("mmap2 mismatch");
 
+  printf("Sigue 5\n");
+  
   munmap(p1, PGSIZE);
   if(memcmp(p2, "67890", 5) != 0)
     err("mmap2 mismatch (2)");

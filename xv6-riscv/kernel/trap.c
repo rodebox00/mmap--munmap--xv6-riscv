@@ -74,6 +74,7 @@ usertrap(void)
 
   }else if(r_scause() == 12 || r_scause() == 13 || r_scause() == 15){ //Page fault
     
+    printf("Fallo de página\n");
     int i = 0;
 
     if(p->nvma == 0){
@@ -85,7 +86,7 @@ usertrap(void)
     struct vma *act = p->vmas;  
 
     for(i = 0; i<p->nvma; i++){ //Watch if the address fits in any vma  TRATAR FALLOS DE PAGINA QUE NO SEAN DE LA VMA
-      if(f_vaddr >= act->addri && f_vaddr < act->addri+act->size) break;
+      if(f_vaddr >= act->addri && f_vaddr < act->addre) break;
       act = act->next;
     }
 
@@ -106,8 +107,6 @@ usertrap(void)
       exit(-1);
     }
 
-    printf("Se ha mapeado la direccion %p\n", f_vaddr);
-    
     ilock(act->ofile->ip);
     readi(act->ofile->ip, 1, PGROUNDDOWN(f_vaddr), PGROUNDDOWN(f_vaddr)-act->addri, PGSIZE);
     iunlock(act->ofile->ip);

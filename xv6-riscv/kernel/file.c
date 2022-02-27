@@ -234,7 +234,6 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
       if(((prev != 0) && (prev->addre + psize) > TOP_ADDRESS) || ((prev == 0) && START_ADDRESS + psize > TOP_ADDRESS)) return 0xffffffffffffffff; //The vma can not be allocated
       
       n = &vmas[i];
-      printf("1\n");
       if(prev == 0){
         n->addri = START_ADDRESS;
         n->addre = START_ADDRESS + psize;
@@ -297,8 +296,6 @@ munmap(uint64 addr, uint64 length){
   struct vma *act = p->vmas;
   struct vma *prev = 0;
   int i;
-  
-  printf("1\n");
 
   //Function to release a vma
   void freeVma(){
@@ -402,7 +399,7 @@ munmap(uint64 addr, uint64 length){
   }else if(act->addri == addr){ //Set the new init address when munmap is at the beginning
     act->size = act->size - PGROUNDUP(length);
     act->addri = act->addri+PGROUNDUP(length)-1;  
-  }else act->addre = PGROUNDDOWN(addr) - 1; //Set the new end address when munmap is at the end
+  }else act->addre = PGROUNDDOWN(addr); //Set the new end address when munmap is at the end
 
   release(&p->lock);
   return 0;
