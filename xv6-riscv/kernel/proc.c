@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "vma.h"
 
 struct cpu cpus[NCPU];
 
@@ -344,6 +345,8 @@ void
 exit(int status)
 {
   struct proc *p = myproc();
+  struct vma *act = p->vmas;
+  struct vma *nxvma = 0;
 
   if(p == initproc)
     panic("init exiting");
@@ -355,6 +358,13 @@ exit(int status)
       fileclose(f);
       p->ofile[fd] = 0;
     }
+  }
+
+  // Unmap all vmas
+  for(int i = 0; i<p->nvma; i++){
+    nxvma = act->next;
+    munmap(act->addri, act->addre - act->addri);
+    act = nxvma;
   }
 
   begin_op();

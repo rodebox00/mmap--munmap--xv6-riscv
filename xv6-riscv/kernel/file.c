@@ -395,11 +395,11 @@ munmap(uint64 addr, uint64 length){
   printf("%d\n", PGROUNDUP(length));
 
   if(act->addri+PGROUNDUP(length) == act->addre){
+    printf("Libero la vma\n");
+    printf("%p %d\n", addr, length);
     freeVma();
-  }else if(act->addri == addr){ //Set the new init address when munmap is at the beginning
-    act->size = act->size - PGROUNDUP(length);
-    act->addri = act->addri+PGROUNDUP(length)-1;  
-  }else act->addre = PGROUNDDOWN(addr); //Set the new end address when munmap is at the end
+  }else if(act->addri == addr) act->addri = act->addri+PGROUNDUP(length); //Set the new init address when munmap is at the beginning  
+  else act->addre = PGROUNDDOWN(addr); //Set the new end address when munmap is at the end
 
   release(&p->lock);
   return 0;

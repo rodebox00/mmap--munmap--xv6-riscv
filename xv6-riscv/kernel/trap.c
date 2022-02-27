@@ -105,7 +105,7 @@ usertrap(void)
       kfree(paddr);
       p->killed = 1;
       exit(-1);
-    }
+    } 
 
     ilock(act->ofile->ip);
     readi(act->ofile->ip, 1, PGROUNDDOWN(f_vaddr), PGROUNDDOWN(f_vaddr)-act->addri, PGSIZE);
