@@ -6,6 +6,12 @@
 #include "proc.h"
 #include "defs.h"
 #include "vma.h"
+#include "fs.h"
+#include "sleeplock.h"
+#include "file.h"
+
+
+//extern struct vma vmas[VMAS_STORED];
 
 struct cpu cpus[NCPU];
 
@@ -308,8 +314,45 @@ fork(void)
 
   pid = np->pid;
 
-  //Copy father's vmas and increase one the file references 
-  np->vmas = p->vmas;             
+  //Copy father's vmas and increment the file references 
+  np->nvma = p->nvma;
+  struct vma *act = p->vmas;
+  int pindex = -1;
+  int c = 0;
+  
+  acquire(&vmaslock);
+  for(i = 0; i<p->nvma; i++){
+        //Search for a free vma in the global vma array
+        while(c < VMAS_STORED && c != pindex){
+          if(vmas[c].use == 0){
+            
+            if(i == 0) np->vmas = &vmas[c];
+            else vmas[pindex].next = &vmas[c];
+
+            vmas[c].use = 1;
+            vmas[c].size = act->size;
+            vmas[c].ofile = act->ofile;
+            vmas[c].addrinit = act->addrinit;
+            vmas[c].addri = act->addri;
+            vmas[c].addre = act->addre;
+            vmas[c].offset = act->offset;
+            vmas[c].next = 0;
+            vmas[c].prot = act->prot;
+            vmas[c].flag = act->flag;
+            vmas[c].ofile->ref++;  //Add a reference to the file
+            pindex = c;
+          }else if(c == VMAS_STORED-1){
+            release(&vmaslock);
+            release(&np->lock);
+            return -1;  //No free vma was found
+          }
+          c++;
+        }
+    c++;
+    act = act->next;         
+  }
+
+  release(&vmaslock);
   release(&np->lock);
 
   acquire(&wait_lock);

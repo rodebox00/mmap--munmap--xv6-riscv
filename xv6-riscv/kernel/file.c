@@ -12,12 +12,13 @@
 #include "file.h"
 #include "stat.h"
 #include "proc.h"
-#include "vma.h"
 #include "fcntl.h"
+#include "vma.h"
 
 
 
 struct vma vmas[VMAS_STORED];
+
 struct spinlock vmaslock; //Lock to modify global vma array
 
 extern pte_t *walk(pagetable_t, uint64, int);
@@ -212,16 +213,19 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
     return 0xffffffffffffffff;
   }
 
-  acquire(&vmaslock);
 
   //Search for a free vma in the global vma array
-  for(i = 0; i < VMAS_STORED; i++){
-    if(vmas[i].use == 0) break;
-    else if(i == VMAS_STORED-1){
-      release(&p->lock);
-      release(&vmaslock);
-      return 0xffffffffffffffff;  //No free vma was found
+  struct vma * findVma(){
+    acquire(&vmaslock);
+    for(int c = 0; c < VMAS_STORED; c++){
+      if(vmas[c].use == 0){
+        vmas[c].use = 1; 
+        release(&vmaslock);
+        return &vmas[c];
+      }
     }
+    release(&vmaslock);
+    return (struct vma *) 0xffffffffffffffff;  //No free vma was found
   }
 
   psize = PGROUNDUP(length);
@@ -233,7 +237,11 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
     if(act == 0){
       if(((prev != 0) && (prev->addre + psize) > TOP_ADDRESS) || ((prev == 0) && START_ADDRESS + psize > TOP_ADDRESS)) return 0xffffffffffffffff; //The vma can not be allocated
       
-      n = &vmas[i];
+      if((n = findVma()) == (struct vma *) 0xffffffffffffffff){
+        release(&p->lock);
+        return 0xffffffffffffffff;
+      }
+
       if(prev == 0){
         n->addri = START_ADDRESS;
         n->addre = START_ADDRESS + psize;
@@ -246,8 +254,12 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
       goto allocated; 
 
     }else if((prev != 0) && prev->addre + psize <= act->addri){ //A new vma can fit between two
-      printf("1\n");
-      n = &vmas[i];
+      
+      if((n = findVma()) == (struct vma *) 0xffffffffffffffff){
+        release(&p->lock);
+        return 0xffffffffffffffff;
+      }
+
       prev->next = n;
       n->next = act;
       n->addri = prev->addre;
@@ -255,23 +267,19 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
       goto allocated; 
     }
 
-    printf("1\n"); 
     prev = act;
     act = act->next;
   }
-  printf("1\n");
+
   return 0xffffffffffffffff; //The vma can not be allocated
 
   allocated:
     n->size = length;
-    n->use = 1;
     n->prot = prot;
     n->ofile = p->ofile[fd];
     n->offset = 0;
     n->flag = flag;
     n->addrinit = n->addri;
-
-    release(&vmaslock);
 
     p->ofile[fd]->ref++;  //Add a reference to the file
     if(p->nvma == 0)  p->vmas = n;
@@ -289,6 +297,8 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
 
 int
 munmap(uint64 addr, uint64 length){
+
+  if(vmas[MAX_VMAS-1].use == -2) printf("ESTAN CONECTADOS\n");
 
   struct proc *p = myproc(); 
 
@@ -394,11 +404,8 @@ munmap(uint64 addr, uint64 length){
 
   printf("%d\n", PGROUNDUP(length));
 
-  if(act->addri+PGROUNDUP(length) == act->addre){
-    printf("Libero la vma\n");
-    printf("%p %d\n", addr, length);
-    freeVma();
-  }else if(act->addri == addr) act->addri = act->addri+PGROUNDUP(length); //Set the new init address when munmap is at the beginning  
+  if(act->addri+PGROUNDUP(length) == act->addre) freeVma();
+  else if(act->addri == addr) act->addri = act->addri+PGROUNDUP(length); //Set the new init address when munmap is at the beginning  
   else act->addre = PGROUNDDOWN(addr); //Set the new end address when munmap is at the end
 
   release(&p->lock);

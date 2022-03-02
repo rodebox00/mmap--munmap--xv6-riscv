@@ -4,6 +4,8 @@
 //Maximum address of the process where a vma can fit
 #define TOP_ADDRESS 0x3FFFFFDFFF 
 
+//Maximum number of vmas allowed in general
+#define VMAS_STORED 30
 
 struct vma
 {
@@ -18,3 +20,7 @@ struct vma
     int prot;
     int flag;
 };
+
+extern struct vma vmas[VMAS_STORED];
+
+extern struct spinlock vmaslock; //Lock to modify global vma array
