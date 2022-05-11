@@ -2722,16 +2722,12 @@ countfree()
     exit(1);
   }
   
-  printf("1\n");
-
   int pid = fork();
 
   if(pid < 0){
     printf("fork failed in countfree()\n");
     exit(1);
   }
-  
-  printf("2 dos\n");
 
   if(pid == 0){
     close(fds[0]);
@@ -2755,11 +2751,7 @@ countfree()
     exit(0);
   }
 
-  printf("3\n");
-  
   close(fds[1]);
-
-  printf("4\n");
 
   int n = 0;
   while(1){
@@ -2767,17 +2759,16 @@ countfree()
     int cc = read(fds[0], &c, 1);
     if(cc < 0){
       printf("read() failed in countfree()\n");
-       printf("5\n");
       exit(1);
     }
     if(cc == 0)
       break;
     n += 1;
   }
- printf("5\n");
+
   close(fds[0]);
   wait((int*)0);
-    printf("5\n");
+  
   return n;
 }
 
@@ -2920,20 +2911,14 @@ main(int argc, char *argv[])
 
   printf("usertests starting\n");
   int free0 = countfree();
-  printf("CUCUCUC\n");
   int free1 = 0;
-  printf("CUCUCUC\n");
   int fail = 0;
-  printf("CUCUCUC\n");
   for (struct test *t = tests; t->s != 0; t++) {
     if((justone == 0) || strcmp(t->s, justone) == 0) {
-      printf("CUCUCUC\n");
       if(!run(t->f, t->s))
         fail = 1;
     }
   }
-  
-  printf("PEPE\n");
 
   if(fail){
     printf("SOME TESTS FAILED\n");

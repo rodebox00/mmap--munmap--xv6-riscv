@@ -40,7 +40,7 @@ _v1(char *p)
   int i;
   for (i = 0; i < PGSIZE*2; i++) {
     if (i < PGSIZE + (PGSIZE/2)) {
-      //printf("BEFORE TAhT\n");
+      
       if (p[i] != 'A') {
         printf("mismatch at %d, wanted 'A', got 0x%x\n", i, p[i]);
         err("v1 mismatch (1)");
@@ -115,7 +115,7 @@ mmap_test(void)
   if (p == MAP_FAILED)
     err("mmap (1)");
   _v1(p);
-  printf("Continue %p\n", p);
+
   if (munmap(p, PGSIZE*2) == -1)
     err("munmap (1)");
   
@@ -126,7 +126,6 @@ mmap_test(void)
     err("mmap (2)");
   if (close(fd) == -1)
     err("close");
-  printf("YYYY\n");
   _v1(p);
   for (i = 0; i < PGSIZE*2; i++)
     p[i] = 'Z';
@@ -181,13 +180,9 @@ mmap_test(void)
   if (close(fd) == -1)
     err("close");
 
-  printf("Continuaaaa\n");
-
   // unmap the rest of the mapped memory.
   if (munmap(p+PGSIZE*2, PGSIZE) == -1)
     err("munmap (4)");
-
-  printf("Sigue 2\n");
   
   //
   // mmap two files at the same time.
@@ -198,7 +193,7 @@ mmap_test(void)
   if(write(fd1, "12345", 5) != 5)
     err("write mmap1");
   char *p1 = mmap(0, PGSIZE, PROT_READ, MAP_PRIVATE, fd1, 0);
-  printf("Me devuelve la dirección %p\n", p1);
+  
   if(p1 == MAP_FAILED)
     err("mmap mmap1");
   close(fd1);

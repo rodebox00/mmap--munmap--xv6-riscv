@@ -74,7 +74,6 @@ usertrap(void)
 
   }else if(r_scause() == 12 || r_scause() == 13 || r_scause() == 15){ //Page fault
     
-    printf("Fallo de página\n");
     int i = 0;
 
     if(p->nvma == 0){
@@ -85,7 +84,7 @@ usertrap(void)
     uint64 f_vaddr = (uint64) r_stval();
     struct vma *act = p->vmas;  
 
-    for(i = 0; i<p->nvma; i++){ //Watch if the address fits in any vma  TRATAR FALLOS DE PAGINA QUE NO SEAN DE LA VMA
+    for(i = 0; i<p->nvma; i++){ //Watch if the address fits in any vma 
       if(f_vaddr >= act->addri && f_vaddr < act->addre) break;
       act = act->next;
     }

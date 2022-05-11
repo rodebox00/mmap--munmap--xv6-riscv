@@ -275,7 +275,6 @@ freewalk(pagetable_t pagetable)
       freewalk((pagetable_t)child);
       pagetable[i] = 0;
     } else if(pte & PTE_V){
-      printf("Valor de i %d", pte);
       panic("freewalk: leaf");
     }
   }
@@ -289,7 +288,6 @@ uvmfree(pagetable_t pagetable, uint64 sz)
 {
   if(sz > 0)
     uvmunmap(pagetable, 0, PGROUNDUP(sz)/PGSIZE, 1);
-  printf("LLamo\n");
   freewalk(pagetable);
 }
 

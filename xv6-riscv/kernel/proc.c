@@ -10,10 +10,6 @@
 #include "sleeplock.h"
 #include "file.h"
 
-
-
-//extern struct vma vmas[VMAS_STORED];
-
 struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
@@ -389,7 +385,6 @@ exit(int status)
 {
   struct proc *p = myproc();
   struct vma *act = p->vmas;
-  //struct vma *nxvma = 0;
 
   if(p == initproc)
     panic("init exiting");
