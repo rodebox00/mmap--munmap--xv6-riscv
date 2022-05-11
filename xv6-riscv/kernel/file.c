@@ -198,9 +198,13 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
 
   struct proc *p = myproc();
 
+   printf("LLEGAAA\n");
+
   //Check if it is a private map or not and it has the correct permissions
   if((flag == MAP_SHARED && (p->ofile[fd]->readable != 1 || p->ofile[fd]->writable != 1)) || (flag != MAP_SHARED && flag != MAP_PRIVATE)) 
     return 0xffffffffffffffff;
+
+  printf("LLEGAAA\n");
 
   int i;
   struct vma *n, *act, *prev;
@@ -287,7 +291,7 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
  
     release(&p->lock);
 
-    printf("Devuekvo %p\n", n->addri);
+    printf("Devuekvo %p y numero de vmas %d\n", n->addri, p->nvma);
     return n->addri; 
 }
 #pragma GCC pop_options
@@ -298,10 +302,7 @@ mmap(void *addr, uint64 length, int prot, int flag, int fd){
 int
 munmap(uint64 addr, uint64 length){
 
-  if(vmas[MAX_VMAS-1].use == -2) printf("ESTAN CONECTADOS\n");
-
   struct proc *p = myproc(); 
-
   acquire(&p->lock);
   struct vma *act = p->vmas;
   struct vma *prev = 0;
@@ -314,8 +315,12 @@ munmap(uint64 addr, uint64 length){
     //Organize the linked list of vmas
     if(prev == 0){
       if(act->next == 0) p->vmas = 0;
-      else p->vmas = act->next;
+      else{
+        p->vmas = act->next;
+        printf("Direccion de la vma nueva inicial %p\n", p->vmas->addri);
+      }
     }else if(act->next != 0) prev->next = act->next;
+    else prev->next = 0;
 
     act->ofile->ref--;  //Reduce references to file 
     act->use = 0;
@@ -329,26 +334,21 @@ munmap(uint64 addr, uint64 length){
     act->prot = 0;
     act->flag = 0;
     p->nvma--;
+    printf("ELIMINO LA VMA\n");
     release(&vmaslock);
   }
-
-  printf("2\n");
-
+  
   //Check if the address is contained in a vma
   for(i = 0; i<p->nvma; i++){
-    printf("%p %p %p\n", addr+length, act->addri, act->addre);
-    if(addr+length >= act->addri && addr+length <= act->addre) break;
+    if(addr+length >= act->addri && addr+length <= act->addre && addr >= act->addri && addr < act->addre) break;
     prev = act;
     act = act->next;
   }
-
-  //printf("%p %d\n", addr, length);
 
   if(i == p->nvma){
     release(&p->lock);
     return -1; 
   }
-
   pte_t *pte;
   int sizeWritten;
   int out = 0;
@@ -360,7 +360,7 @@ munmap(uint64 addr, uint64 length){
     if(*pte & PTE_V){
     printf("Lo que me devuelve walk %p\n", pte);
 
-    //Whether flag MAP_SHARED was established, check if the page has the dirty bit and if it has write on disk
+    //Whether flag MAP_SHARED was established, check if the page has the dirty bit and if it has to write on disk
       if((*pte & PTE_D) && act->flag == MAP_SHARED){
 
         ilock(act->ofile->ip);
@@ -408,7 +408,10 @@ munmap(uint64 addr, uint64 length){
   else if(act->addri == addr) act->addri = act->addri+PGROUNDUP(length); //Set the new init address when munmap is at the beginning  
   else act->addre = PGROUNDDOWN(addr); //Set the new end address when munmap is at the end
 
+  printf("direccion final de inicio %p y final %p \n", act->addri, act->addre);
+
   release(&p->lock);
+  printf("SALIDA y numero de vmas %d\n",p->nvma);
   return 0;
 }
 

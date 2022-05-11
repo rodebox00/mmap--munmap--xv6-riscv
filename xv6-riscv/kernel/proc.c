@@ -11,6 +11,7 @@
 #include "file.h"
 
 
+
 //extern struct vma vmas[VMAS_STORED];
 
 struct cpu cpus[NCPU];
@@ -293,7 +294,7 @@ fork(void)
   // Copy user memory from parent to child.
   if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
     freeproc(np);
-    release(&np->lock);
+    release(&np->lock); 
     return -1;
   }
   np->sz = p->sz;
@@ -319,7 +320,7 @@ fork(void)
   struct vma *act = p->vmas;
   int pindex = -1;
   int c = 0;
-  
+
   acquire(&vmaslock);
   for(i = 0; i<p->nvma; i++){
         //Search for a free vma in the global vma array
@@ -328,7 +329,7 @@ fork(void)
             
             if(i == 0) np->vmas = &vmas[c];
             else vmas[pindex].next = &vmas[c];
-
+  
             vmas[c].use = 1;
             vmas[c].size = act->size;
             vmas[c].ofile = act->ofile;
@@ -345,8 +346,7 @@ fork(void)
             release(&vmaslock);
             release(&np->lock);
             return -1;  //No free vma was found
-          }
-          c++;
+          }else c++;
         }
     c++;
     act = act->next;         
@@ -389,7 +389,7 @@ exit(int status)
 {
   struct proc *p = myproc();
   struct vma *act = p->vmas;
-  struct vma *nxvma = 0;
+  //struct vma *nxvma = 0;
 
   if(p == initproc)
     panic("init exiting");
@@ -404,10 +404,9 @@ exit(int status)
   }
 
   // Unmap all vmas
-  for(int i = 0; i<p->nvma; i++){
-    nxvma = act->next;
+  while(p->nvma > 0){
+    act = p->vmas;
     munmap(act->addri, act->addre - act->addri);
-    act = nxvma;
   }
 
   begin_op();

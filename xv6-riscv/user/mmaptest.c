@@ -138,7 +138,6 @@ mmap_test(void)
   if ((fd = open(f, O_RDONLY)) == -1)
     err("open");
   p = mmap(0, PGSIZE*3, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-  printf("lo que me devuelve %p\n", p);
   if (p != MAP_FAILED)
     err("mmap call should have failed");
   if (close(fd) == -1)
@@ -205,9 +204,6 @@ mmap_test(void)
   close(fd1);
   unlink("mmap1");
 
-  //printf("%s %s\n", *p1, p1);
-  printf("Sigue 3\n");
-
   int fd2;
   if((fd2 = open("mmap2", O_RDWR|O_CREATE)) < 0)
     err("open mmap2");
@@ -218,16 +214,12 @@ mmap_test(void)
     err("mmap mmap2");
   close(fd2);
   unlink("mmap2");
-
-  printf("Sigue 4\n");
   
 
   if(memcmp(p1, "12345", 5) != 0)
     err("mmap1 mismatch");
   if(memcmp(p2, "67890", 5) != 0)
     err("mmap2 mismatch");
-
-  printf("Sigue 5\n");
   
   munmap(p1, PGSIZE);
   if(memcmp(p2, "67890", 5) != 0)
@@ -253,12 +245,14 @@ fork_test(void)
   
   // mmap the file twice.
   makefile(f);
-  if ((fd = open(f, O_RDONLY)) == -1)
+  if ((fd = open(f, O_RDWR)) == -1)
     err("open");
   unlink(f);
+   
   char *p1 = mmap(0, PGSIZE*2, PROT_READ, MAP_SHARED, fd, 0);
   if (p1 == MAP_FAILED)
     err("mmap (4)");
+
   char *p2 = mmap(0, PGSIZE*2, PROT_READ, MAP_SHARED, fd, 0);
   if (p2 == MAP_FAILED)
     err("mmap (5)");
