@@ -485,7 +485,7 @@ sys_pipe(void)
   return 0;
 }
 
-//We assume the kernel decides where the file is mapped and the offset is 0
+//We assume that the kernel decides where the file is mapped and the offset is 0
 uint64
 sys_mmap(void)
 {
