@@ -1,7 +1,6 @@
 # mmap--munmap--xv6-riscv
 
-En esta modificación del sistema operativo xv6-riscv se incluyen las implementaciones de las llamadas al sistema `nmap()` y `munmap()` que permiten la creación, eliminación o modificación de VMAs (Virtual Me-
-mory Areas) respectivamente.
+En esta modificación del sistema operativo xv6-riscv se incluyen las implementaciones de las llamadas al sistema `nmap()` y `munmap()` que permiten la creación, eliminación o modificación de VMAs (Virtual Memory Areas) respectivamente.
 
 Esta versión modificada trae consigo un programa llamado `mmaptest` que comprueba el correcto funcionamiento de ambas llamadas al sistema.
 
@@ -11,8 +10,7 @@ Para poder ejecutar este xv6 modificado y simular la arquitectura se debe ejecut
 
 # mmap--munmap--xv6-riscv
 
-This modification of the xv6-riscv operating system includes implementations of the `nmap()` and `munmap()` system calls that allow the creation, deletion or modification of VMAs (Virtual Me-
-mory Areas) respectively.
+This modification of the xv6-riscv operating system includes implementations of the `nmap()` and `munmap()` system calls that allow the creation, deletion or modification of VMAs (Virtual Memory Areas) respectively.
 
 This modified version comes with a program called `mmaptest` that checks the correct operation of both system calls.
 
